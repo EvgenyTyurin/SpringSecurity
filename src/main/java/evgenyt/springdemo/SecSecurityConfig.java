@@ -9,8 +9,10 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import javax.sql.DataSource;
+
 /**
- * Security on and config
+ * Security ON and config
  */
 
 @Configuration
@@ -21,13 +23,23 @@ public class SecSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     PasswordEncoder passwordEncoder;
 
+    // Bean declared in AppConfig.java
+    @Autowired
+    DataSource dataSource;
+
     // Add users here
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        // user1 hardcoded
         auth.inMemoryAuthentication()
                 .withUser("user1")
                 .password(passwordEncoder.encode("pass1"))
                 .roles("USER");
+        // user2 from database tables: users(password must be encrypt) and authorities
+        auth.jdbcAuthentication().dataSource(dataSource)
+                .usersByUsernameQuery("select username, password, enabled from users where username=?")
+                .authoritiesByUsernameQuery("select username, authority from authorities where username=?")
+                .passwordEncoder(new BCryptPasswordEncoder());
     }
 
     @Bean
